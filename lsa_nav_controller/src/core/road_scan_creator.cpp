@@ -60,6 +60,7 @@ float RoadScanCreator::distance_from_occupied_grid(Grid gs, Grid ge)
         if (e2 <  d.x) {err += d.x; g_cur.y += s.y;}
     }
 }
+
 float RoadScanCreator::get_dist_two_grids(Grid g1, Grid g2)
 {
     Grid gd = g2 - g1;

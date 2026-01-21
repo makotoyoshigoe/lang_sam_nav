@@ -20,29 +20,38 @@ LsaNavController::~LsaNavController(){}
 
 void LsaNavController::declare_param(void)
 {
-    declare_parameter("road_scan.max_angle_abs", 1.48);
-    declare_parameter("road_scan.min_angle_abs", 1.04);
-    declare_parameter("road_scan.angle_increment", 0.00436);
-    declare_parameter("road_scan.max_range", 5.);
-    declare_parameter("road_scan.min_range", 0.1);
-    declare_parameter("road_scan.front_angle_abs", 0.523);
+    // declare_parameter("road_scan.max_angle_abs", 1.48);
+    // declare_parameter("road_scan.min_angle_abs", 1.04);
+    // declare_parameter("road_scan.angle_increment", 0.00436);
+    // declare_parameter("road_scan.max_range", 5.);
+    // declare_parameter("road_scan.min_range", 0.1);
+    // declare_parameter("road_scan.front_angle_abs", 0.523);
     declare_parameter("control_freq", 20);
     declare_parameter("base_frame_id", "base_footprint");
     declare_parameter("odom_frame_id", "odom");
-    declare_parameter("controller.linear_vel.max", 0.2);
-    declare_parameter("controller.linear_vel.min", 0.0);
-    declare_parameter("controller.angular_vel.max", 1.0);
-    declare_parameter("controller.angular_vel.min", -0.5);
-    declare_parameter("controller.linear_acc_th", 0.05);
-    declare_parameter("controller.linear_dec_th", 0.05);
-    declare_parameter("controller.angular_acc_th", 0.1);
-    declare_parameter("controller.angular_dec_th", -0.1);
-    declare_parameter("controller.kp", 1.);
-    declare_parameter("controller.ki", 0.);
-    declare_parameter("controller.kd", 0.);
+    declare_parameter("debug", true);
+
+    // Parameters for Bug controller
+    declare_parameter("bug.linear_vel.max", 0.2);
+    // declare_parameter("controller.linear_vel.min", 0.0);
+    declare_parameter("bug.angular_vel.max", 1.0);
+    // declare_parameter("controller.angular_vel.min", -0.5);
+    // declare_parameter("controller.linear_acc_th", 0.05);
+    // declare_parameter("controller.linear_dec_th", 0.05);
+    // declare_parameter("controller.angular_acc_th", 0.1);
+    // declare_parameter("controller.angular_dec_th", -0.1);
+    declare_parameter("bug.kp", 10.);
+    // declare_parameter("controller.ki", 0.);
+    // declare_parameter("controller.kd", 0.);
+    declare_parameter("bug.search_angle.front.start", -20.);
+    declare_parameter("bug.search_angle.front.end", 20.);
+    declare_parameter("bug.search_angle.side.start", 69.);
+    declare_parameter("bug.search_angle.side.end", 80.);
+    declare_parameter("bug.obstacle_avoidance_threshold", 0.6);
+    declare_parameter("bug.target_wall_distance", 0.5);
 
     // Parameters for PotentialController
-    declare_parameter("potential.critical_distance", 0.4);
+    declare_parameter("potential.critical_distance", 30.0);
     declare_parameter("potential.repulsive_gain_map", 1.0);
     declare_parameter("potential.repulsive_gain_scan", 1.0);
     declare_parameter("potential.attractive_gain", 3.0);
@@ -59,31 +68,49 @@ void LsaNavController::declare_param(void)
 
 void LsaNavController::init_param(void)
 {
-    float max_angle = get_parameter("road_scan.max_angle_abs").as_double();
-    float min_angle = get_parameter("road_scan.min_angle_abs").as_double();
-    float angle_increment = get_parameter("road_scan.angle_increment").as_double();
-    float max_range = get_parameter("road_scan.max_range").as_double();
-    float min_range = get_parameter("road_scan.min_range").as_double();
-    float front_angle_abs = get_parameter("road_scan.front_angle_abs").as_double();
+    // float max_angle = get_parameter("road_scan.max_angle_abs").as_double();
+    // float min_angle = get_parameter("road_scan.min_angle_abs").as_double();
+    // float angle_increment = get_parameter("road_scan.angle_increment").as_double();
+    // float max_range = get_parameter("road_scan.max_range").as_double();
+    // float min_range = get_parameter("road_scan.min_range").as_double();
+    // float front_angle_abs = get_parameter("road_scan.front_angle_abs").as_double();
     control_freq_ = get_parameter("control_freq").as_int();
     base_frame_id_ = get_parameter("base_frame_id").as_string();
     odom_frame_id_ = get_parameter("odom_frame_id").as_string();
-    float lin_max_vel = get_parameter("controller.linear_vel.max").as_double();
-    float lin_min_vel = get_parameter("controller.linear_vel.min").as_double();
-    float ang_max_vel = get_parameter("controller.angular_vel.max").as_double();
-    float ang_min_vel = get_parameter("controller.angular_vel.min").as_double();
-    float lin_acc_th = get_parameter("controller.linear_acc_th").as_double();
-    float lin_dec_th = get_parameter("controller.linear_dec_th").as_double();
-    float ang_acc_th = get_parameter("controller.angular_acc_th").as_double();
-    float ang_dec_th = get_parameter("controller.angular_dec_th").as_double();
-    float kp = get_parameter("controller.kp").as_double();
-    float ki = get_parameter("controller.ki").as_double();
-    float kd = get_parameter("controller.kd").as_double();
+    debug_ = get_parameter("debug").as_bool();
+    float lin_max_vel = get_parameter("bug.linear_vel.max").as_double();
+    // float lin_min_vel = get_parameter("controller.linear_vel.min").as_double();
+    float ang_max_vel = get_parameter("bug.angular_vel.max").as_double();
+    // float ang_min_vel = get_parameter("controller.angular_vel.min").as_double();
+    // float lin_acc_th = get_parameter("controller.linear_acc_th").as_double();
+    // float lin_dec_th = get_parameter("controller.linear_dec_th").as_double();
+    // float ang_acc_th = get_parameter("controller.angular_acc_th").as_double();
+    // float ang_dec_th = get_parameter("controller.angular_dec_th").as_double();
+    float kp = get_parameter("bug.kp").as_double();
+    // float ki = get_parameter("controller.ki").as_double();
+    // float kd = get_parameter("controller.kd").as_double();
+
+    float front_search_angle_start = get_parameter("bug.search_angle.front.start").as_double() * M_PI / 180.;
+    float front_search_angle_end = get_parameter("bug.search_angle.front.end").as_double() * M_PI / 180.;
+    float side_search_angle_start = get_parameter("bug.search_angle.side.start").as_double() * M_PI / 180.;
+    float side_search_angle_end = get_parameter("bug.search_angle.side.end").as_double() * M_PI / 180.;
+    float obs_avoid_th = get_parameter("bug.obstacle_avoidance_threshold").as_double();
+    float target_wall_dist = get_parameter("bug.target_wall_distance").as_double();
     // road_scan_creator_.reset(new RoadScanCreator(max_angle, min_angle, angle_increment, max_range, min_range, front_angle_abs));
-    //controller_.reset(new Controller(
-    //    lin_max_vel, lin_min_vel, ang_max_vel, ang_min_vel, 
-    //    lin_acc_th, lin_dec_th, ang_acc_th, ang_dec_th, 
-    //    kp, ki, kd, 1 / (float)control_freq_));
+    // controller_.reset(new Controller(
+    //     lin_max_vel, lin_min_vel, ang_max_vel, ang_min_vel, 
+    //     lin_acc_th, lin_dec_th, ang_acc_th, ang_dec_th, 
+    //     kp, ki, kd, 1 / (float)control_freq_));
+    controller_.reset(new Controller(
+        lin_max_vel, ang_max_vel, 
+        kp, 
+        front_search_angle_start, 
+        front_search_angle_end, 
+        side_search_angle_start, 
+        side_search_angle_end, 
+        obs_avoid_th, 
+        target_wall_dist
+    ));
 
     // Construct PotentialController instance
     float critical_distance = get_parameter("potential.critical_distance").as_double(); 
@@ -106,24 +133,27 @@ void LsaNavController::init_param(void)
     open_place_checker_.reset(new OpenPlaceChecker(
         detect_angle_start, detect_angle_end, detect_angle_division_num, range_th_, ratio_th_));
     scan_.reset(new Scan());
+    integ_scan_.reset(new Scan());
+    // map_.reset(new Map());
+    // map_scan_integrator_.reset(new MapScanIntegrator(critical_distance));
 }
 
 void LsaNavController::init_pubsub(void)
 {
-    sub_lsa_map_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-        "lang_sam_map", rclcpp::QoS(10), std::bind(&LsaNavController::cb_lsa_map, this, std::placeholders::_1));
     sub_scan_ = create_subscription<sensor_msgs::msg::LaserScan>(
         "scan", rclcpp::SensorDataQoS(), std::bind(&LsaNavController::cb_scan, this, std::placeholders::_1));
-    pub_road_scan_ = create_publisher<sensor_msgs::msg::LaserScan>("scan/road", rclcpp::SensorDataQoS());
-    pub_map_test_ = create_publisher<nav_msgs::msg::OccupancyGrid>("lsa_map/test", rclcpp::QoS(10));
     pub_cmd_vel_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel/lsa_nav", rclcpp::QoS(10));
+    // sub_lsa_map_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+    //     "lang_sam_map", rclcpp::QoS(10), std::bind(&LsaNavController::cb_lsa_map, this, std::placeholders::_1));
+    // pub_integrated_ = create_publisher<sensor_msgs::msg::LaserScan>("scan/integrated", rclcpp::SensorDataQoS());
+    // pub_map_test_ = create_publisher<nav_msgs::msg::OccupancyGrid>("lsa_map/test", rclcpp::QoS(10));
 }
 
-void LsaNavController::cb_lsa_map(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
-{
-    potential_controller_->set_map_data(msg);
-    receive_map_ = true;
-}
+// void LsaNavController::cb_lsa_map(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
+// {
+//     map_->set_lsa_map(msg);
+//     receive_map_ = true;
+// }
 
 void LsaNavController::cb_scan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
 {
@@ -132,38 +162,64 @@ void LsaNavController::cb_scan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
     receive_scan_ = true;
 }
 
+void LsaNavController::cb_integrated_scan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
+{
+    integ_scan_->set_scan_data(msg);
+    integ_scan_frame_id_ = msg->header.frame_id;
+    receive_integ_scan_ = true;
+}
+
 void LsaNavController::main_loop(void)
 {
     if(!init_tf_) init_tf();
-    //if(!receive_scan_ || !receive_map_) return;
     if(!receive_scan_) return;
-    
-    geometry_msgs::msg::Pose2D odom_to_base_pose, base_to_lidar_pose;
-    if(!get_tf_pose(base_frame_id_, odom_frame_id_, odom_to_base_pose)) return;
-    if(!get_tf_pose(scan_frame_id_, odom_frame_id_, base_to_lidar_pose)) return;
-    Scan & tmp_scan = *scan_;
+    if(!debug_ && !receive_integ_scan_) return;
+    std::shared_ptr<Scan> tmp_scan = scan_, tmp_integ_scan = integ_scan_;
+
     open_place_checker_->set_scan(tmp_scan);
-    std::array<float, 3> open_laser_info = open_place_checker_->get_open_laser_info();
-    RCLCPP_INFO(get_logger(), "Open place info: direction: %.2f [deg], distance: %.2f [m], ratio score: %.2f", 
-        open_laser_info[0]*180.0/M_PI, open_laser_info[1], open_laser_info[2]);
-    // Judge whether open place is available
+    std::array<float, 2> cmd_vel;
     if(open_place_checker_->is_open_place_available()){
         // If available, calculate cmd_vel by PotentialController
+        RCLCPP_INFO(get_logger(), "Open place detected. Calculate cmd_vel.");
         std::array<float, 3> open_laser_info = open_place_checker_->get_open_laser_info();
-        potential_controller_->set_scan(tmp_scan);
-        CmdVel cmd_vel = potential_controller_->get_cmd_vel(
-            odom_to_base_pose, base_to_lidar_pose, open_laser_info);
-        publish_cmd_vel(cmd_vel);
-        return;
+        potential_controller_->set_scan(debug_ ? tmp_scan : tmp_integ_scan);
+        cmd_vel = potential_controller_->get_cmd_vel(open_laser_info);
+    }else{
+        // If not available, stop the robot
+        RCLCPP_WARN(get_logger(), "No open place detected. Wall following.");
+        controller_->set_scan(debug_ ? tmp_scan : tmp_integ_scan);
+        cmd_vel = controller_->get_cmd_vel();
     }
 
-    // If not available, stop the robot
-    RCLCPP_WARN(get_logger(), "No open place detected. Stop the robot.");
-    CmdVel stop_cmd_vel;
-    stop_cmd_vel.linear_vel = 0.0;
-    stop_cmd_vel.angular_vel = 0.0;
-    publish_cmd_vel(stop_cmd_vel);
+    publish_cmd_vel(cmd_vel);
+    //if(!receive_scan_ || !receive_map_) return;
+    
+    // Get TF poses
+    // geometry_msgs::msg::Pose2D odom_to_base_pose, base_to_lidar_pose;
+    // if(!get_tf_pose(base_frame_id_, odom_frame_id_, odom_to_base_pose)) return;
+    // if(!get_tf_pose(scan_frame_id_, base_frame_id_, base_to_lidar_pose)) return;
 
+    // Get scan and map to syncronize data some processing
+    // std::shared_ptr<Map> tmp_map = map_;
+    // map_scan_integrator_->set_data(tmp_scan, tmp_map, odom_to_base_pose, base_to_lidar_pose);
+    // std::vector<std::array<float, 4>> integrated_scan = map_scan_integrator_->integrate_map_scan();
+    // sensor_msgs::msg::LaserScan integrated_msg;
+    // map_scan_integrator_->get_integrated_msg(integrated_msg);
+    // pub_integrated_->publish(integrated_msg);
+        // map_scan_integrator_->cvt_data_lidar_to_robot(tmp_scan, base_to_lidar_pose);
+    // for(auto & data : integrated_scan){
+    //     RCLCPP_INFO(get_logger(), "Angle: %.2f [deg], Range: %.2f [m], X: %.2f [m], Y: %.2f [m]", 
+    //         data[0]*180.0/M_PI, data[1], data[2], data[3]);
+    // }
+        //map_scan_integrator_->integrate_map_scan(tmp_map, tmp_scan, odom_to_base_pose, base_to_lidar_pose);
+
+    // Open place check
+
+    // RCLCPP_INFO(get_logger(), "Open place info: direction: %.2f [deg], distance: %.2f [m], ratio score: %.2f", 
+    //     open_laser_info[0]*180.0/M_PI, open_laser_info[1], open_laser_info[2]);
+
+    // Judge whether open place is available
+    
 }
 
 void LsaNavController::init_tf(void)
@@ -211,13 +267,14 @@ bool LsaNavController::get_tf_pose(
 
 int LsaNavController::get_loop_freq(void){return control_freq_;}
 
-void LsaNavController::publish_cmd_vel(CmdVel & cmd_vel)
+void LsaNavController::publish_cmd_vel(std::array<float, 2> & cmd_vel)
 {
-    // Convert Force to CmdVel
+    // Convert Force to std::array<float, 2>
     geometry_msgs::msg::Twist msg;
-    msg.angular.z = cmd_vel.angular_vel;
-    msg.linear.x = cmd_vel.linear_vel;
+    msg.linear.x = cmd_vel[0];
+    msg.angular.z = cmd_vel[1];
     pub_cmd_vel_->publish(msg);
+    RCLCPP_INFO(get_logger(), "Publish Cmd Vel");
 }
     
 } // namespace lsa_nav_controller

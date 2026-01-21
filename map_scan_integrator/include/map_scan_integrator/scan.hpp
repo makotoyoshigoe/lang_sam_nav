@@ -6,7 +6,7 @@
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 
-namespace lsa_nav_controller
+namespace map_scan_integrator 
 {
 class Scan{
     public:
@@ -14,14 +14,11 @@ class Scan{
     ~Scan();
 
     // methods
-    void set_lidar_pose(geometry_msgs::msg::Pose2D lidar_pose);
     size_t rad_to_index(float rad);
     float index_to_rad(size_t i);
     bool out_angle(float angle);
     void set_scan_data(sensor_msgs::msg::LaserScan::ConstSharedPtr scan_msg);
-    // [0]: angle, [1]: range
-    std::array<float, 2> get_minimum_laser(float start, float end);
-    float get_side_lat_ave(float start, float end);
+    
 
     // public member variables
     float angle_min_;
@@ -32,7 +29,6 @@ class Scan{
     std::vector<float> ranges_;
     std::vector<std::array<float, 4>> cvtd_scan_data_; // [0]: angle, [1]: range, [2]: x, [3]: y
     std::string frame_id_;
-    sensor_msgs::msg::LaserScan scan_msg_;
 
     private:
     float detect_angle_start_; 

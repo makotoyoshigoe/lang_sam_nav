@@ -18,7 +18,7 @@ class OpenPlaceChecker{
         float range_th, 
         float ratio_th);
     ~OpenPlaceChecker();
-    void set_scan(Scan & scan);
+    void set_scan(std::shared_ptr<Scan> & scan);
     bool is_open_place_available(void);
     std::array<float, 3> get_open_laser_info(void);
     // {a_s: angle start, a_e: angle end} of sector
@@ -34,6 +34,6 @@ class OpenPlaceChecker{
     std::vector<std::array<float, 2>> division_angles_;
     std::array<float, 3> open_laser_info_;
     sensor_msgs::msg::LaserScan::SharedPtr filtered_scan_msg_;
-    Scan scan_;
+    std::shared_ptr<Scan> scan_;
 };
 } // namespace lsa_nav_controller

@@ -79,6 +79,7 @@ void LangSamToMap::init_pubsub(void)
     pub_color_pc2_ = create_publisher<sensor_msgs::msg::PointCloud2>("color_cloud", rclcpp::QoS(10));
     pub_vis_raw_mask_ = create_publisher<sensor_msgs::msg::Image>("visualized_raw_mask", rclcpp::QoS(10));
     pub_vis_mask_ = create_publisher<sensor_msgs::msg::Image>("visualized_mask", rclcpp::QoS(10));
+    pub_vis_contours_ = create_publisher<sensor_msgs::msg::Image>("contours", rclcpp::QoS(10));
 	pub_lang_sam_map_ = create_publisher<nav_msgs::msg::OccupancyGrid>("lang_sam_map", rclcpp::QoS(10));
     sub_color_.subscribe(this, "/camera/camera/color/image_raw");
     sub_depth_.subscribe(this, "/camera/camera/aligned_depth_to_color/image_raw");
@@ -236,6 +237,11 @@ void LangSamToMap::handle_process(
             if(lsa_map_generator_->get_visualize_msg(
                 false, vis_mask_msg, color_msg_, response_msg->boxes)){
                 pub_vis_mask_->publish(vis_mask_msg);
+            }
+            sensor_msgs::msg::Image contour_mask_msg;
+            if(lsa_map_generator_->get_only_contours_vis_msg(
+                contour_mask_msg, color_msg_)){
+                pub_vis_contours_->publish(contour_mask_msg);
             }
             null_map_ = false;
         }

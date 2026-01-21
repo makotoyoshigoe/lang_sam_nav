@@ -8,10 +8,10 @@
 
 namespace lsa_nav_controller
 {
-struct CmdVel{
-    float linear_vel;
-    float angular_vel;
-};
+// struct std::array<float, 2>{
+//     float linear_vel;
+//     float angular_vel;
+// };
 
 struct Force{
     float x = 0.0f;
@@ -41,25 +41,22 @@ class PotentialController{
     ~PotentialController();
 
     // setters
-    void set_scan(Scan & scan);
-    void set_map_data(
-        nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_msg);
+    void set_scan(
+        //std::shared_ptr<Scan> & scan, 
+        std::shared_ptr<Scan> & scan); 
     
     // main methods
-    CmdVel get_cmd_vel(
-        geometry_msgs::msg::Pose2D odom_pose, 
-        geometry_msgs::msg::Pose2D lidar_pose, 
+    std::array<float, 2> get_cmd_vel(
         std::array<float, 3> open_laser_info);
-    CmdVel force_to_cmd_vel(Force force);
+    std::array<float, 2> force_to_cmd_vel(Force force);
     Force calc_potential_force(void);
-    Force calc_repulsive_force_map(float odom_x, float odom_y);
-    Force calc_repulsive_force_scan(void);
+    Force calc_repulsive_force(void);
     Force calc_attractive_force(void);
     void nomalize(float x_in, float y_in, float & x_out, float & y_out);
 
     private:
-    Scan scan_;
-    std::unique_ptr<Map> map_;
+    // std::vector<std::array<float, 4>> neighborhood_obs_;
+    std::shared_ptr<Scan> scan_;
 
     // parameters
     float critical_distance_;

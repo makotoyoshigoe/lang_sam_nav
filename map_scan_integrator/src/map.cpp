@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Makoto Yoshigoe myoshigo0127@gmail.com 
 // SPDX-License-Identifier: Apache-2.0
 
-#include "lsa_nav_controller/map/map.hpp"
+#include "map_scan_integrator/map.hpp"
 
-namespace lsa_nav_controller
+namespace map_scan_integrator
 {
 
 Map::Map(void)

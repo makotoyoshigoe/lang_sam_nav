@@ -208,6 +208,24 @@ bool LSAMapGenerator::get_visualize_msg(
     return image.cv_to_msg(base->header, cv_vis, output);
 }
 
+bool LSAMapGenerator::get_only_contours_vis_msg(
+        sensor_msgs::msg::Image & output, 
+        sensor_msgs::msg::Image::ConstSharedPtr base
+    )
+{
+    int row, col;
+    mask_images_->get_image_size(row, col);
+    // 下地
+    cv::Mat base_image = cv::Mat::zeros(row, col, CV_8UC3);
+
+    std::vector<std::vector<cv::Point>> contour;
+    mask_images_->get_contours(contour);
+    cv::drawContours(base_image, contour, -1, cv::Scalar(255, 0, 0), 5); //cv::drawContours(img_blank, contours, -1, (0,0,0), 3)
+    
+    Image image;
+    return image.cv_to_msg(base->header, base_image, output);
+}
+
 LSAMapGenerator::~LSAMapGenerator(){}
     
 } // namespace lang_sam_to_map

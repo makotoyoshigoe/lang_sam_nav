@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "lsa_nav_controller/core/open_place_checker.hpp"
-#include "lsa_nav_controller/utils/scan_utils.hpp"
+// #include "lsa_nav_controller/utils/scan_->tils.hpp"
 
 namespace lsa_nav_controller
 {
@@ -30,19 +30,19 @@ OpenPlaceChecker::OpenPlaceChecker(
     }
 }
 
-void OpenPlaceChecker::set_scan(Scan & scan)
+void OpenPlaceChecker::set_scan(std::shared_ptr<Scan> & scan)
 {
     scan_ = scan;
     // RCLCPP_INFO(rclcpp::get_logger("lsa_nav_controller"), 
     //     "Scan data set: frame_id: %s, angle_min: %.2f [deg], angle_max: %.2f [deg], angle_increment: %.2f [deg], range_min: %.2f [m], range_max: %.2f [m], num_ranges: %zu", 
-    //     scan_.frame_id_.c_str(), scan_.angle_min_*180.0/M_PI, scan_.angle_max_*180.0/M_PI, scan_.angle_increment_*180.0/M_PI, scan_.range_min_, scan_.range_max_, scan_.ranges_.size());
+    //     scan_->frame_id_.c_str(), scan_->angle_min_*180.0/M_PI, scan_->angle_max_*180.0/M_PI, scan_->angle_increment_*180.0/M_PI, scan_->range_min_, scan_->range_max_, scan_->ranges_.size());
 }
 
 bool OpenPlaceChecker::is_open_place_available(void)
 {
     // Scan info
-    float angle_increment = scan_.angle_increment_;
-    auto angle_min = scan_.angle_min_;
+    float angle_increment = scan_->angle_increment_;
+    auto angle_min = scan_->angle_min_;
 
     // Define for storing scores
     float max_ratio_score = -1.0f;
@@ -80,14 +80,14 @@ std::array<float, 3> OpenPlaceChecker::compute_sector_info(
 
     // Get indices
     float start = a_s, end = a_e;
-    size_t i_s= scan_.rad_to_index(a_s); 
-    size_t i_e= scan_.rad_to_index(a_e);
+    size_t i_s= scan_->rad_to_index(a_s); 
+    size_t i_e= scan_->rad_to_index(a_e);
         
     // Compute average range and ratio score
     int sum_n=0, sum_i=0;
     float sum_l=0.0f;
     for(size_t i=i_s; i<=i_e; ++i){
-        float range = scan_.ranges_[i];
+        float range = scan_->ranges_[i];
         if(range >= range_th_){
             sum_l += range;
             ++sum_n;

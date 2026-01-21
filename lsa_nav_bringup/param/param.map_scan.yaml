@@ -1,13 +1,13 @@
 lang_sam_to_map:
   ros__parameters:
     lsa:
-      text_prompt: "various sidewalks and tiles"
+      text_prompt: "walkable paths and sidewalks, including manholes, drains, tiles, patterned surfaces, smooth or textured pavement suitable for walking"
       # text_prompt: "lanes"
       box_threshold: 0.3
       text_threshold: 0.25
     node_freq: 20
     interval:
-      time: 10.0
+      time: 15.0
       distance: 10.0
     pointcloud: 
       publish: false
@@ -24,7 +24,14 @@ lang_sam_to_map:
       resolution: 0.1
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
-    noise_contour_area_threshold: 1000.0
+    noise_contour_area_threshold: 100000.0
     connect_grid_threshold: 1.0
     outer_frame_threshold: 10
     depth_correct_range: 5
+
+map_scan_integrator:
+  ros__parameters:
+    search_threshold: 10.0
+    node_freq: 10
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"

@@ -11,7 +11,7 @@
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <geometry_msgs/msg/pose2_d.hpp>
 
-namespace lsa_nav_controller
+namespace map_scan_integrator 
 {
 struct Grid{
     int x;

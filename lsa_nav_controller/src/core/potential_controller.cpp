@@ -26,45 +26,25 @@ max_angular_vel_(max_angular_vel),
 attractive_gain_(attractive_gain),
 sigma_(sigma)
 {
-    map_ = std::make_unique<Map>();
 }
 
-void PotentialController::set_scan(Scan & scan){scan_ = scan;}
-
-void PotentialController::set_map_data(nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_msg)
+void PotentialController::set_scan(
+    // std::shared_ptr<Scan> & scan, 
+    std::shared_ptr<Scan> & scan) 
 {
-    map_->frame_id_ = map_msg->header.frame_id;
-    map_->height_ = map_msg->info.height;
-    map_->width_ = map_msg->info.width;
-    map_->resolution_ = map_msg->info.resolution;
-    map_->p_org_.x = map_msg->info.origin.position.x; 
-    map_->p_org_.y = map_msg->info.origin.position.y; 
-    map_->p_org_.theta = tf2::getYaw(map_msg->info.origin.orientation);
-    map_->p_org_q_ = map_msg->info.origin.orientation;
-    if(map_->height_ != map_->data_.size() && map_->width_ != map_->data_.size()) map_->data_.assign(map_->height_, std::vector<int8_t>(map_->width_, 0));
-    std::vector<int8_t> data_1d = map_msg->data;
-    map_->cvt_1d_to_2d(data_1d);
-    RCLCPP_INFO(rclcpp::get_logger("lsa_nav_controller"), "Set Map");
+    scan_ = scan;
+    //RCLCPP_INFO(rclcpp::get_logger("lsa_nav_controller"), "Set Scan Data");
 }
 
-CmdVel PotentialController::get_cmd_vel(
-    geometry_msgs::msg::Pose2D odom_pose, 
-    geometry_msgs::msg::Pose2D lidar_pose, 
+std::array<float, 2> PotentialController::get_cmd_vel(
     std::array<float, 3> open_laser_info)
 {
-    // Set poses
-    scan_.set_lidar_pose(lidar_pose);
-    map_->set_odom_pose(odom_pose);
     std::copy(open_laser_info.begin(), open_laser_info.end(), std::begin(open_laser_info_));
 
-    geometry_msgs::msg::Pose2D odom_lidar_pose;
-    odom_lidar_pose.x = odom_pose.x + cosf(odom_pose.theta) * lidar_pose.x - sinf(odom_pose.theta) * lidar_pose.y;
-    odom_lidar_pose.y = odom_pose.y + sinf(odom_pose.theta) * lidar_pose.x + cosf(odom_pose.theta) * lidar_pose.y;
-    odom_lidar_pose.theta = odom_pose.theta + lidar_pose.theta;
     return force_to_cmd_vel(calc_potential_force());
 }
 
-CmdVel PotentialController::force_to_cmd_vel(Force force)
+std::array<float, 2> PotentialController::force_to_cmd_vel(Force force)
 {
     float force_magnitude = hypotf(force.x, force.y); 
     float theta_force = atan2f(force.y, force.x);
@@ -72,47 +52,29 @@ CmdVel PotentialController::force_to_cmd_vel(Force force)
                 "Force mag: %.3f, theta: %.3f, Force X: %.3f, Force Y: %.3f", 
                 force_magnitude, theta_force, force.x, force.y);
 
-    CmdVel cmd_vel;
+    std::array<float, 2> cmd_vel;
     float linear_vel = force_magnitude > 1e-3 ? force.x / force_magnitude * max_linear_vel_ : 0.0f;
     float linear_vel_vec = linear_vel / fabs(linear_vel);
-    cmd_vel.linear_vel = fabs(linear_vel) > max_linear_vel_ ? linear_vel_vec * max_linear_vel_ : linear_vel;
+    cmd_vel[0]= fabs(linear_vel) > max_linear_vel_ ? linear_vel_vec * max_linear_vel_ : linear_vel;
     float ang_vel_vec = theta_force / fabs(theta_force);
-    cmd_vel.angular_vel = fabs(theta_force) > max_angular_vel_ ? ang_vel_vec * max_angular_vel_ : theta_force;
+    cmd_vel[1]= fabs(theta_force) > max_angular_vel_ ? ang_vel_vec * max_angular_vel_ : theta_force;
     return cmd_vel;
 }
 
 Force PotentialController::calc_potential_force(void)
 {
     // Force repulsive_force_map = calc_repulsive_force_map(odom_x, odom_y);
-    Force repulsive_force_scan = calc_repulsive_force_scan();
+    Force repulsive_force = calc_repulsive_force();
     Force attractive_force = calc_attractive_force();
     //return attractive_force - repulsive_force_map - repulsive_force_scan;
-    return attractive_force + repulsive_force_scan;
+    return attractive_force + repulsive_force;
 }
 
-Force PotentialController::calc_repulsive_force_map(float odom_x, float odom_y)
+Force PotentialController::calc_repulsive_force(void)
 {
-    //Laser nearest_obstacle = map_->get_nearest_obstacle(odom_x, odom_y);
-    //Force repulsive_force;
-    //if(nearest_obstacle.distance < critical_distance_){
-    //    float force_magnitude = repulsive_gain_map_ * (1.0f / nearest_obstacle.distance - 1.0f / critical_distance_) / (nearest_obstacle.distance * nearest_obstacle.distance);
-    //    repulsive_force.x = -force_magnitude * cosf(nearest_obstacle.direction);
-    //    repulsive_force.y = -force_magnitude * sinf(nearest_obstacle.direction);
-    //} else {
-    //    repulsive_force.x = 0.0f;
-    //    repulsive_force.y = 0.0f;
-    //}
-    //return repulsive_force;
-    return {0.0f, 0.0f}; // TODO: implement map-based repulsive force
-}
-
-Force PotentialController::calc_repulsive_force_scan(void)
-{
-    float angle = scan_.angle_min_;
-    float angle_increment = scan_.angle_increment_;
     float rx = 0.0f, ry = 0.0f;
-    for(auto & range : scan_.ranges_){
-        // Values greater than critical distance are ignored
+    float angle = scan_->angle_min_;
+    for(auto & range : scan_->ranges_){
         if(range < critical_distance_){
             // Force vector
             float ex = cos(angle), ey = sin(angle);
@@ -123,27 +85,19 @@ Force PotentialController::calc_repulsive_force_scan(void)
             // Accumulate force
             rx += mag * (-ex);
             ry += mag * (-ey);
+
         }
-        // Calculate repulsive force
-        angle += angle_increment;
+        angle += scan_->angle_increment_;
     }
     return {rx, ry};
-    // std::vector<LaserXY> exceed_lasers;
-    // scan_.get_exceed_threshold_lasers(critical_distance_, exceed_lasers);
-    // float fx = 0.0f, fy = 0.0f;
-    // for(auto &laser : exceed_lasers){
-    //     float x = laser.x;
-    //     float y = laser.y;
-    //     float r = hypot(x, y);
-    //     if(r < min_distance_) r = min_distance_;
-
-    //     float f = (1 / r - 1 / critical_distance_) / r;
-    //     nomalize(x, y, x, y);
-    //     fx += f * x;
-    //     fy += f * y;
-    // }
-    // return {fx * repulsive_gain_scan_, fy * repulsive_gain_scan_};
 }
+
+    // for(auto & scan : neighborhood_obs_){
+        // Values greater than critical distance are ignored
+        // float angle = scan[0];
+        // float range = scan[1];
+        //RCLCPP_INFO(rclcpp::get_logger("lsa_nav_controller"), "angle: %.2f, range: %.2f", angle, range);
+        
 
 void PotentialController::nomalize(
     float x_in, float y_in, float & x_out, float & y_out)

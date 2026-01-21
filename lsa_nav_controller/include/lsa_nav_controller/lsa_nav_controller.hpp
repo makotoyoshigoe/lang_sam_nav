@@ -10,10 +10,11 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
-#include "lsa_nav_controller/core/road_scan_creator.hpp"
-// #include "lsa_nav_controller/core/controller.hpp"
 #include "lsa_nav_controller/core/open_place_checker.hpp"
 #include "lsa_nav_controller/core/potential_controller.hpp"
+#include "lsa_nav_controller/core/map_scan_integrator.hpp"
+#include "lsa_nav_controller/core/controller.hpp"
+// #include "lsa_nav_controller/core/road_scan_creator.hpp"
 
 namespace lsa_nav_controller
 {
@@ -21,8 +22,9 @@ class LsaNavController : public rclcpp::Node{
     public:
     LsaNavController();
     ~LsaNavController();
-    void cb_lsa_map(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg);
+    // void cb_lsa_map(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg);
     void cb_scan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
+    void cb_integrated_scan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
     void declare_param(void);
     void init_param(void);
     void init_pubsub(void);
@@ -33,24 +35,29 @@ class LsaNavController : public rclcpp::Node{
         const std::string & target_frame, 
         const std::string & source_frame,
         geometry_msgs::msg::Pose2D & odom);
-    void publish_cmd_vel(CmdVel & cmd_vel);
+    void publish_cmd_vel(std::array<float, 2> & cmd_vel);
 
     private:
     // ROS2 Pub/Sub
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_lsa_map_;
+    //rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_lsa_map_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_scan_;
-    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_road_scan_;
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pub_map_test_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_integrated_scan_;
+    // rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_integrated_;
+    // rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pub_map_test_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_cmd_vel_;
 
     // Core Components
-    std::unique_ptr<PotentialController> potential_controller_;
     std::unique_ptr<OpenPlaceChecker> open_place_checker_;
+    std::unique_ptr<PotentialController> potential_controller_;
+    std::unique_ptr<Controller> controller_;
+    // std::unique_ptr<MapScanIntegrator> map_scan_integrator_;
     //std::unique_ptr<RoadScanCreator> road_scan_creator_;
-    // std::unique_ptr<Controller> controller_;
 
-    // Sensor Components
-    std::shared_ptr<Scan> scan_;
+    // Sensor Component
+    std::shared_ptr<Scan> scan_, integ_scan_;
+
+    // Map Component
+    // std::shared_ptr<Map> map_;
     
     // TF2
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -58,10 +65,10 @@ class LsaNavController : public rclcpp::Node{
 
     // Parameters
     int control_freq_;
-    std::string base_frame_id_, odom_frame_id_, scan_frame_id_;
+    std::string base_frame_id_, odom_frame_id_, scan_frame_id_, integ_scan_frame_id_;
 
     // variables
-    bool init_tf_, receive_scan_, receive_map_;
+    bool init_tf_, receive_scan_, receive_integ_scan_, debug_;
 };
     
 } // namespace lsa_nav_controller

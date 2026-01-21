@@ -45,6 +45,10 @@ class LSAMapGenerator : public lang_sam_to_map::Map{
         sensor_msgs::msg::Image & output, 
         sensor_msgs::msg::Image::ConstSharedPtr base, 
         std::vector<sensor_msgs::msg::RegionOfInterest> & boxes);
+    bool get_only_contours_vis_msg(
+        sensor_msgs::msg::Image & output, 
+        sensor_msgs::msg::Image::ConstSharedPtr base
+    );
 
     private:
     std::vector<sensor_msgs::msg::Image> masks_msg_vec_;
